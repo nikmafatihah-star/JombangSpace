@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>JombangSpace</title>
+
+<style>
+body {margin:0;font-family:'Segoe UI';background:#121212;color:white}
+
+/* LOGIN */
+.auth {display:flex;justify-content:center;align-items:center;height:100vh;}
+.box {background:#1e1e1e;padding:30px;border-radius:15px;width:300px;text-align:center;}
+input {width:100%;padding:10px;margin:8px 0;border:none;border-radius:8px;}
+button {width:100%;padding:10px;background:#6f4e37;color:white;border:none;border-radius:8px;}
+
+/* APP */
+.app {display:none}
+header {background:#6f4e37;padding:15px;display:flex;flex-wrap:wrap;justify-content:space-between}
+.profile {display:flex;align-items:center}
+.avatar {width:35px;height:35px;border-radius:50%;background:white;color:black;display:flex;align-items:center;justify-content:center;margin-right:10px}
+
+.search {width:100%;margin-top:10px}
+.search input {width:100%;padding:10px;border-radius:10px;border:none}
+
+.tags {text-align:center;padding:10px}
+.tag {background:#333;padding:5px 10px;border-radius:20px;margin:5px;cursor:pointer}
+.tag:hover {background:#6f4e37}
+
+/* CARD */
+.container {display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:15px;padding:20px;}
+.card {background:#1e1e1e;border-radius:15px;overflow:hidden;transition:0.3s;}
+.card:hover {transform:scale(1.03)}
+
+.media {position:relative;height:150px;}
+.map {position:absolute;width:100%;height:100%;border:none;filter:brightness(0.7);}
+.foto {position:absolute;width:100%;height:100%;object-fit:cover;transition:0.3s;}
+.card:hover .foto {opacity:0.6;transform:scale(1.05);}
+
+.card-body {padding:10px}
+
+/* MODAL */
+.modal {display:none;position:fixed;width:100%;height:100%;background:rgba(0,0,0,0.8)}
+.modal-content {background:#1e1e1e;margin:5% auto;padding:20px;width:80%;border-radius:15px}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div class="auth" id="authPage">
+<div class="box">
+<h2 id="judul">Login</h2>
+<input id="nama" placeholder="Nama (daftar)">
+<input id="username" placeholder="Username">
+<input id="password" type="password" placeholder="Password">
+<button onclick="proses()">Masuk</button>
+</div>
+</div>
+
+<!-- APP -->
+<div class="app" id="appPage">
+
+<header>
+<h3>☕ JombangSpace</h3>
+
+<div class="profile">
+<div class="avatar" id="avatar"></div>
+<span id="namaUser"></span>
+<span onclick="logout()" style="margin-left:10px;cursor:pointer;">Logout</span>
+</div>
+
+<div class="search">
+<input id="search" placeholder="Cari cafe...">
+</div>
+</header>
+
+<div class="tags">
+<span class="tag" onclick="filterTag('all')">#Semua</span>
+<span class="tag" onclick="filterTag('nongkrong')">#Nongkrong</span>
+<span class="tag" onclick="filterTag('cozy')">#Cozy</span>
+<span class="tag" onclick="filterTag('aesthetic')">#Aesthetic</span>
+<span class="tag" onclick="filterTag('family friendly')">#Family</span>
+</div>
+
+<div class="container" id="listCafe"></div>
+
+<!-- MODAL -->
+<div class="modal" id="modal">
+<div class="modal-content">
+<span onclick="modal.style.display='none'">✖</span>
+<h2 id="detailNama"></h2>
+<p id="detailAlamat"></p>
+<iframe id="mapFrame" width="100%" height="200"></iframe><br><br>
+<a id="waLink" target="_blank">📱 Chat WhatsApp</a>
+</div>
+</div>
+
+</div>
+
+<script>
+let selectedTag="all";
+
+/* LOGIN */
+function proses(){
+let user={nama:nama.value,username:username.value};
+localStorage.setItem("session",JSON.stringify(user));
+loadApp();
+}
+function loadApp(){
+let u=JSON.parse(localStorage.getItem("session"));
+if(u){
+authPage.style.display="none";
+appPage.style.display="block";
+namaUser.innerText=u.nama;
+avatar.innerText=u.nama[0];
+tampilkan();
+}
+}
+function logout(){localStorage.removeItem("session");location.reload();}
+
+/* DATA 9 CAFE */
+let cafe=[
+{nama:"Janji Jiwa",alamat:"Jl. Presiden KH. Abdurrahman Wahid",wa:"6281119179224",map:"https://maps.google.com/maps?q=Janji%20Jiwa%20Jombang&output=embed",tag:["nongkrong"]},
+{nama:"Toko Kopi Epidemi",alamat:"Jl. WR. Supratman",wa:"6282233625700",map:"https://maps.google.com/maps?q=Epidemi%20Jombang&output=embed",tag:["nongkrong","cozy"]},
+{nama:"Toko Kopi Arte",alamat:"Jl. RE Martadinata",wa:"628139189926",map:"https://maps.google.com/maps?q=Arte%20Jombang&output=embed",tag:["aesthetic","cozy"]},
+{nama:"Susu Sedjahtera",alamat:"Mojoagung",wa:"6287797353253",map:"https://maps.google.com/maps?q=Susu%20Sedjahtera&output=embed",tag:["cozy"]},
+{nama:"Rasaloka Jombang",alamat:"Jl. Adityawarman",wa:"62881333285577",map:"https://maps.google.com/maps?q=Rasaloka&output=embed",tag:["family friendly"]},
+{nama:"Narastory Coffee",alamat:"Jl. Urip Sumoharjo",wa:"6281249638287",map:"https://maps.google.com/maps?q=Narastory&output=embed",tag:["nongkrong","24 jam"]},
+{nama:"Dogel Coffee Shop",alamat:"Jl. Cak Durasim",wa:"62811350020",map:"https://maps.google.com/maps?q=Dogel%20Coffee&output=embed",tag:["family friendly","cozy","nongkrong","24 jam"]},
+{nama:"Maroone Coffee",alamat:"Jl. Kertajaya",wa:"6285648400574",map:"https://maps.google.com/maps?q=Maroone%20Coffee&output=embed",tag:["aesthetic"]},
+{nama:"Warkop Langgano",alamat:"Mojoagung",wa:"6285334323611",map:"https://maps.google.com/maps?q=Langgano%20Jombang&output=embed",tag:["nongkrong"]}
+];
+
+/* TAMPIL */
+function tampilkan(){
+listCafe.innerHTML="";
+cafe
+.filter(c=>selectedTag==="all"||c.tag.includes(selectedTag))
+.filter(c=>c.nama.toLowerCase().includes(search.value.toLowerCase()))
+.forEach((c,i)=>{
+listCafe.innerHTML+=`
+<div class="card">
+<div class="media">
+<iframe src="${c.map}" class="map"></iframe>
+</div>
+<div class="card-body">
+<h3>${c.nama}</h3>
+<p>${c.alamat}</p>
+<button onclick="bukaModal(${i})">📍 Lihat Lokasi</button>
+<p>${c.tag.map(t=>`#${t}`).join(" ")}</p>
+</div>
+</div>`;
+});
+}
+
+function bukaModal(i){
+modal.style.display="block";
+detailNama.innerText=cafe[i].nama;
+detailAlamat.innerText=cafe[i].alamat;
+mapFrame.src=cafe[i].map;
+waLink.href="https://wa.me/"+cafe[i].wa;
+}
+
+function filterTag(t){selectedTag=t;tampilkan();}
+search.addEventListener("input",tampilkan);
+
+loadApp();
+</script>
+
+</body>
+</html>
